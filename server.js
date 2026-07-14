@@ -18,30 +18,28 @@ const wss = new WebSocket.Server({
   server,
 });
 
-console.log("===========================================");
-console.log(" UISP Protocol Analyzer Started");
-console.log("===========================================");
+// console.log("===========================================");
+// console.log(" UISP Protocol Analyzer Started");
+// console.log("===========================================");
 
 wss.on("connection", (ws, request) => {
   const startTime = new Date();
-
-  console.log("\n===========================================");
-  console.log(" NEW CONNECTION");
+  
   console.log("===========================================");
+  console.log("headers[\"x-forwarded-for\"] ");
 
-  console.log("Time:", startTime.toISOString());
-
-  console.log("\nRemote Address:");
   console.log(
     request.headers["x-forwarded-for"] || request.socket.remoteAddress,
   );
-
-  console.log("\nHeaders:");
-
+  console.log("===========================================");
+  
+  
+  console.log("===========================================");
+  console.log("\nHEADERS:");
   console.log(request.headers);
+  console.log("===========================================");
 
   console.log("\nRequested URL:");
-
   console.log(request.url);
 
   console.log("\n===========================================");
@@ -100,7 +98,7 @@ wss.on("connection", (ws, request) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 443;
 
 server.listen(PORT, () => {
   console.log(`HTTP Server running on port ${PORT}`);
