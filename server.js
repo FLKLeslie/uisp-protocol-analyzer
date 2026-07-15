@@ -51,7 +51,6 @@ function decryptUnmsMessage(url, rawMessage) {
   console.log('raw message length:', rawMessage.length);
 
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv); // 16-byte IV, confirmed correct
-  console.log("Decipher created with key:", decipher.toString('hex'), " len:", decipher.length);
   decipher.setAuthTag(tag);
 
   const plaintext = Buffer.concat([
