@@ -2,6 +2,8 @@ const express = require("express");
 const http = require("http");
 const crypto = require('crypto');
 const WebSocket = require("ws");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 
@@ -66,46 +68,107 @@ app.get("/", (req, res) => {
   res.send(`
         <h2>UISP Protocol Analyzer</h2>
         <p>Server is running.</p>
-        <p>Waiting for WebSocket connections...</p>
+        <p>Waiting for AirMAX devices...</p>
     `);
 });
 
 const server = http.createServer(app);
 
-const wss = new WebSocket.Server({
-  server,
+const CAPTURE_DIR = path.join(__dirname, "captures");
+
+if (!fs.existsSync(CAPTURE_DIR)) {
+  fs.mkdirSync(CAPTURE_DIR);
+}
+
+server.on("upgrade", (request, socket, head) => {
+  console.log("\n==================================================");
+  console.log("HTTP UPGRADE REQUEST");
+  console.log("==================================================");
+
+  console.log("Time:", new Date().toISOString());
+  console.log("URL:", request.url);
+
+  console.log("\nHeaders:");
+  console.log(request.headers);
+
+  console.log("==================================================");
 });
 
-// console.log("===========================================");
-// console.log(" UISP Protocol Analyzer Started");
-// console.log("===========================================");
+const wss = new WebSocket.Server({
+  server,
+
+  handleProtocols: (protocols) => {
+    console.log("\nRequested WebSocket Protocols:");
+
+    console.log([...protocols]);
+
+    if (protocols.has("unms2")) {
+      console.log("Accepting protocol: unms2");
+
+      return "unms2";
+    }
+
+    console.log("No supported protocol requested.");
+
+    return false;
+  },
+});
+
+console.log("==================================================");
+console.log(" UISP Protocol Analyzer Started");
+console.log("==================================================");
+
+let connectionCounter = 0;
 
 wss.on("connection", (ws, request) => {
-  const startTime = new Date();
-  
-  console.log("===========================================");
-  console.log("headers[\"x-forwarded-for\"] ");
+  connectionCounter++;
+
+  const connectionId = connectionCounter;
+
+  const startTime = Date.now();
+
+  let packetCounter = 0;
+
+  console.log("\n");
+  console.log("##################################################");
+  console.log(`CONNECTION #${connectionId}`);
+  console.log("##################################################");
+
+  console.log("Time:", new Date().toISOString());
+
+  console.log("\nRemote Address:");
 
   console.log(
     request.headers["x-forwarded-for"] || request.socket.remoteAddress,
   );
-  console.log("===========================================");
-  
-  
-  console.log("===========================================");
-  console.log("\nHEADERS:");
+
+  console.log("\nHeaders:");
+
   console.log(request.headers);
   console.log("===========================================");
 
   console.log("\nRequested URL:");
   console.log(request.url);
 
-  console.log("\n===========================================");
+  const metadata = {
+    connectionId,
+    time: new Date().toISOString(),
+    ip: request.headers["x-forwarded-for"] || request.socket.remoteAddress,
+    headers: request.headers,
+  };
 
-  // Send something back
-  ws.send("HELLO FROM TEST SERVER");
+  fs.writeFileSync(
+    path.join(CAPTURE_DIR, `connection_${connectionId}.json`),
+    JSON.stringify(metadata, null, 2),
+  );
+
+  // IMPORTANT:
+  // DO NOT SEND ANYTHING.
+  // We want the device to speak first.
 
   ws.on("message", (message, isBinary) => {
+    packetCounter++;
+
     const buffer = Buffer.from(message);
     const url = 'wss://Invisec.uisp.com:443+9kT9fOBtILrr0UPdQu4WuQ7z59vPGuPRrerBvvzJk9ucSbhO+allowUntrustedCertificate';
 
@@ -132,29 +195,35 @@ wss.on("connection", (ws, request) => {
   });
 
   ws.on("close", (code, reason) => {
-    console.log("\n===========================================");
-    console.log(" CONNECTION CLOSED");
-    console.log("===========================================");
+    console.log("\n==================================================");
+    console.log(`CONNECTION ${connectionId} CLOSED`);
+    console.log("==================================================");
 
     console.log("Time:", new Date().toISOString());
 
-    console.log("Duration:", (new Date() - startTime) / 1000, "seconds");
+    console.log(
+      "Duration:",
+      ((Date.now() - startTime) / 1000).toFixed(3),
+      "seconds",
+    );
+
+    console.log("Packets Received:", packetCounter);
 
     console.log("Close Code:", code);
 
     console.log("Reason:", reason.toString());
 
-    console.log("===========================================\n");
+    console.log("==================================================");
   });
 
   ws.on("error", (err) => {
-    console.log("\n###########################################");
-    console.log(" WEBSOCKET ERROR");
-    console.log("###########################################");
+    console.log("\n##################################################");
+    console.log(`WEBSOCKET ERROR (Connection ${connectionId})`);
+    console.log("##################################################");
 
     console.error(err);
 
-    console.log("###########################################\n");
+    console.log("##################################################");
   });
 });
 
