@@ -44,12 +44,14 @@ function decryptUnmsMessage(url, rawMessage) {
   const { connectionKey } = parseUnmsUrl(url);
   const key = deriveKey(connectionKey);
   const { iv, tag, ciphertext } = splitMessage(rawMessage);
-  console.log("IV:", iv.toString('hex'));
-  console.log("Tag:", tag.toString('hex'));
-  console.log("Ciphertext:", ciphertext.toString('hex'));
+  console.log('key (hex):', key.toString('hex'), 'len:', key.length);
+  console.log('iv (hex):', iv.toString('hex'), 'len:', iv.length);
+  console.log('tag (hex):', tag.toString('hex'), 'len:', tag.length);
+  console.log('ciphertext len:', ciphertext.length);
+  console.log('raw message length:', raw.length);
 
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv); // 16-byte IV, confirmed correct
-  console.log("Decipher created with key:", decipher.toString('hex'));
+  console.log("Decipher created with key:", decipher.toString('hex'), " len:", decipher.length);
   decipher.setAuthTag(tag);
 
   const plaintext = Buffer.concat([
