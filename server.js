@@ -51,6 +51,7 @@ function decryptUnmsMessage(url, rawMessage) {
   console.log('raw message length:', rawMessage.length);
 
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv); // 16-byte IV, confirmed correct
+  
   decipher.setAuthTag(tag);
 
   const plaintext = Buffer.concat([
@@ -175,7 +176,7 @@ wss.on("connection", (ws, request) => {
     const buffer = Buffer.from(message);
     const url = 'wss://Invisec.uisp.com:443+9kT9fOBtILrr0UPdQu4WuQ7z59vPGuPRrerBvvzJk9ucSbhO+allowUntrustedCertificate';
 
-    decryptedMessage = decryptUnmsMessage(url, buffer.toString('utf8'));
+    decryptedMessage = decryptUnmsMessage(url, buffer.toString());
 
     console.log("\n-------------------------------------------");
     console.log("MESSAGE RECEIVED");
