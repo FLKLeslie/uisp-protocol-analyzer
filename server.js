@@ -175,7 +175,7 @@ wss.on("connection", (ws, request) => {
     const buffer = Buffer.from(message);
     const url = 'wss://Invisec.uisp.com:443+9kT9fOBtILrr0UPdQu4WuQ7z59vPGuPRrerBvvzJk9ucSbhO+allowUntrustedCertificate';
 
-    decryptedMessage = decryptUnmsMessage(url, buffer);
+    decryptedMessage = decryptUnmsMessage(url, buffer.toString('utf8'));
 
     console.log("\n-------------------------------------------");
     console.log("MESSAGE RECEIVED");
