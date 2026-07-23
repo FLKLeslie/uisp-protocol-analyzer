@@ -7,6 +7,10 @@
   },
   "dependencies": {
     "express": "^4.19.2",
+    "ssh2": "^1.17.0",
     "ws": "^8.18.0"
+  },
+  "allowScripts": {
+    "ssh2@1.17.0": true
   }
 }

@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const WebSocket = require("ws");
 const fs = require("fs");
 const path = require("path");
+const {ssh_Client} = require('ssh2');
 
 const app = express();
 
@@ -17,6 +18,38 @@ function parseUnmsUrl(url) {
   const [host, port] = hostPort.split(':');
   return { host, port: Number(port), connectionKey, flags };
 }
+
+
+function connectSSH(config) {
+  return new Promise((resolve, reject) => {
+    const conn = new ssh_Client();
+
+    conn.on('ready', () => {
+      resolve(conn);
+    });
+
+    conn.on('error', (err) => {
+      reject(err);
+    });
+
+    conn.connect({
+      host: config.host,
+      port: config.port || 22,
+      username: config.username,
+      password: config.password,
+      // Force the client to accept legacy ssh-rsa host key algorithms
+      algorithms: {
+        serverHostKey: [
+          'ssh-rsa',
+          'ssh-dss'
+        ]
+      },
+      // Optional: Skip strict host key checking if you do not have the known_hosts file
+      readyTimeout: 20000
+    });
+  });
+}
+
 
 function b64urlToBuffer(s) {
   return Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
@@ -118,13 +151,41 @@ const wss = new WebSocket.Server({
   },
 });
 
-console.log("==================================================");
-console.log(" UISP Protocol Analyzer Started");
-console.log("==================================================");
 
 let connectionCounter = 0;
-
 wss.on("connection", (ws, request) => {
+  rawAddress = request.socket.remoteAddress;
+  remoteAddress = request.headers["x-forwarded-for"]
+  async function run() {
+    
+  const credentials = {
+    host: remoteAddress,
+    username: 'ubnt',
+    password: 'testing1234567'
+  };
+  try {
+    console.log('Connecting...');
+    const conn = await connectSSH(credentials);
+    console.log('SSH Connection Successful!');
+    
+    // Execute a simple command
+    conn.exec('uptime', (err, stream) => {
+      if (err) throw err;
+      stream.on('close', (code, signal) => {
+        conn.end();
+      }).on('data', (data) => {
+        console.log('STDOUT: ' + data);
+      }).stderr.on('data', (data) => {
+        console.log('STDERR: ' + data);
+      });
+    });
+
+  } catch (error) {
+    console.error('Connection failed:', error.message);
+  }
+  }
+  run();
+
   connectionCounter++;
 
   const connectionId = connectionCounter;
@@ -137,26 +198,14 @@ wss.on("connection", (ws, request) => {
   console.log("##################################################");
   console.log(`CONNECTION #${connectionId}`);
   console.log("##################################################");
-
-  console.log("Time:", new Date().toISOString());
-
   console.log("Raw Address:");
-  console.log(request.socket.remoteAddress);
+  console.log(rawAddress);
   
 
   console.log("\nRemote Address:");
 
-  console.log(
-    request.headers["x-forwarded-for"]
-  );
-
-  console.log("\nHeaders:");
-
-  console.log(request.headers);
-  console.log("===========================================");
-
-  console.log("\nRequested URL:");
-  console.log(request.url);
+  console.log(remoteAddress);
+  
 
   const metadata = {
     connectionId,
@@ -175,30 +224,31 @@ wss.on("connection", (ws, request) => {
   // We want the device to speak first.
 
   ws.on("message", (message, isBinary) => {
-    packetCounter++;
+    console.log("new message recieved!!!!!!!!!!!!!!!!!!!!!!!!!")
+    // packetCounter++;
 
-    const buffer = Buffer.from(message);
-    const url = 'wss://Invisec.uisp.com:443+9kT9fOBtILrr0UPdQu4WuQ7z59vPGuPRrerBvvzJk9ucSbhO+allowUntrustedCertificate';
+    // const buffer = Buffer.from(message);
+    // const url = 'wss://Invisec.uisp.com:443+9kT9fOBtILrr0UPdQu4WuQ7z59vPGuPRrerBvvzJk9ucSbhO+allowUntrustedCertificate';
 
-    decryptedMessage = decryptUnmsMessage(url, buffer.toString());
+    // decryptedMessage = decryptUnmsMessage(url, buffer.toString());
 
-    console.log("\n-------------------------------------------");
-    console.log("MESSAGE RECEIVED");
-    console.log("-------------------------------------------");
+    // console.log("\n-------------------------------------------");
+    // console.log("MESSAGE RECEIVED");
+    // console.log("-------------------------------------------");
 
-    console.log("Timestamp:", new Date().toISOString());
+    // console.log("Timestamp:", new Date().toISOString());
 
-    console.log("Binary:", isBinary);
+    // console.log("Binary:", isBinary);
 
-    console.log("Length:", decryptedMessage.length, "bytes");
+    // console.log("Length:", decryptedMessage.length, "bytes");
 
-    console.log("\nHEX:");
+    // console.log("\nHEX:");
 
-    console.log(decryptedMessage.toString("hex"));
+    // console.log(decryptedMessage.toString("hex"));
 
-    console.log("\nUTF-8:");
+    // console.log("\nUTF-8:");
 
-    console.log(decryptedMessage.toString("utf8"));
+    // console.log(decryptedMessage.toString("utf8"));
     
   });
 
