@@ -7,7 +7,7 @@ const path = require("path");
 
 const app = express();
 
-
+console.log("Script Running!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 function parseUnmsUrl(url) {
   const withoutScheme = url.replace(/^wss?:\/\//, '');
   const parts = withoutScheme.split('+');
