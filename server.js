@@ -140,10 +140,14 @@ wss.on("connection", (ws, request) => {
 
   console.log("Time:", new Date().toISOString());
 
+  console.log("Raw Address:");
+  console.log(request.socket.remoteAddress);
+  
+
   console.log("\nRemote Address:");
 
   console.log(
-    request.headers["x-forwarded-for"] || request.socket.remoteAddress,
+    request.headers["x-forwarded-for"]
   );
 
   console.log("\nHeaders:");
