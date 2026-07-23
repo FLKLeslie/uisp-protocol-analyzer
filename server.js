@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const WebSocket = require("ws");
 const fs = require("fs");
 const path = require("path");
-const {ssh_Client} = require('ssh2');
+const ssh_Client = require('ssh2').Client;
 
 const app = express();
 
